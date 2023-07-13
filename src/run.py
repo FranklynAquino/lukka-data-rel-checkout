@@ -42,24 +42,62 @@ args = parser.parse_args()
 if args.token is None:
     raise ArgumentError("Please add Bearer Token for authorized run")
 else:
-    if args.run_all:
-        token = f'{args.token}'
-        headers = {
+    token = f'{args.token}'
+    headers = {
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {token}'
             }
+    portal = "https://data-pricing-api.lukka.tech"
+    pair_codes = "XBT-USD,ETH-USD,XLT-USD,BCH-USD,BNB-USD,XEC1-USD"
+    
+
+    
+    if args.version is not None and args.source is not None:
+        list_of_latest_prices:List[LatestPricesObj] = []
+        args_url = f'{portal}/{args.version}/pricing/sources/{args.source}/prices?pairCodes={pair_codes}'
+        date_now_utc:datetime = datetime.utcnow()
+        logger.info(f'Your current time is: {date_now_utc}')
+        response = get(url=args_url, headers=headers)
         
-        portal = "https://data-pricing-api.lukka.tech"
+        for item in response.json():
+            current_latest_obj = LatestPricesObj(pair_code=item['pairCode'],ts=item['ts'],current_ts=date_now_utc, prices=item['price'])
+            logger.info(f'Your Objects {current_latest_obj.__str__()}')
+            list_of_latest_prices.append(current_latest_obj)
+        
+        five_min_lag = timedelta(minutes=5)
+        three_min_lag = timedelta(minutes=3)
+        one_min_lag = timedelta(minutes=1)
+        # lag_check_1_minutes = date_now_utc - timedelta(minutes=1)
+        
+        if(args.source == '10500'):
+            for latest_price in list_of_latest_prices:
+                latest_ts = datetime.strptime(latest_price.ts, '%Y-%m-%dT%H:%M:%SZ')
+                lag = latest_price.curren_ts - latest_ts
+                match = re.compile(r'[0-9]\.[0-9]{3}').search(latest_price.prices)
+                if lag <= one_min_lag and match:
+                    logger.info(f'V1(10500): {latest_price.pair_code} is within current time: difference: {lag} & prices include sub-pennies ({latest_price.prices})')
+                else:
+                    logger.info(f'V1(10500): {latest_price.pair_code} is NOT within current time, difference: {lag} or prices doesn\'t include sub-pennies ({latest_price.prices})')
+        else:
+            for latest_price in list_of_latest_prices:
+                latest_ts = datetime.strptime(latest_price.ts, '%Y-%m-%dT%H:%M:%SZ')
+                lag = latest_price.curren_ts - latest_ts
+                # if lag >= '00:03:00.00'  and lag < '00:05:00.00':
+                if lag >= three_min_lag and lag < five_min_lag:
+                    logger.info(f'{args.version}({args.source}): {latest_price.pair_code} is within 3-4 minutes of current time, difference: {lag}')
+                else:
+                    logger.info(f'{args.version}({args.source}): {latest_price.pair_code} is NOT within 3-4 minutes of current time, difference: {lag}')
+                    
+    elif args.run_all:
         pricingv1_url ="/v1/pricing/sources/2000/prices"
         pricingv1_10500_url ="/v1/pricing/sources/10500/prices"
         pricingv3_url ="/v3/pricing/sources/2000/prices"
-        pair_codes = "XBT-USD,ETH-USD,XLT-USD,BCH-USD,BNB-USD,XEC1-USD"
-        # pair_codes = "BNB-USD, XEC1-USD"
         
-        list_of_urls = [pricingv1_url,pricingv1_10500_url,pricingv3_url]
         list_of_latest_pricesv1:List[LatestPricesObj] = []
         list_of_latest_pricesv3:List[LatestPricesObj] = []
         list_of_latest_pricesv1_10500:List[LatestPricesObj] = []
+        
+        list_of_urls = [pricingv1_url,pricingv1_10500_url,pricingv3_url]
         
         date_now_utc:datetime
         
@@ -113,7 +151,6 @@ else:
             else:
                 logger.info(f'V3(2000): {latest_price.pair_code} is NOT within 3-4 minutes of current time, difference: {lag}')
                 
-        
     else:
         logger.info('Checking other arguments')
 
