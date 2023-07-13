@@ -13,6 +13,11 @@ from datetime import (datetime,
 logger = get_logger("-")
 
 parser = argparse.ArgumentParser()
+parser.add_argument('-r',
+                    '--region',
+                    nargs='?',
+                    type = str,
+                    help='Please Specify A Region (e.g., e (east), w (west))',)
 parser.add_argument('-v',
                     '--version',
                     nargs='?',
@@ -50,9 +55,12 @@ else:
     portal = "https://data-pricing-api.lukka.tech"
     pair_codes = "XBT-USD,ETH-USD,XLT-USD,BCH-USD,BNB-USD,XEC1-USD"
     
-
-    
     if args.version is not None and args.source is not None:
+        if(args.region == 'e'):
+            portal = "https://data-pricing-east.lukka.tech"
+        if(args.region == 'w'):
+            portal = "https://data-pricing-west.lukka.tech"
+            
         list_of_latest_prices:List[LatestPricesObj] = []
         args_url = f'{portal}/{args.version}/pricing/sources/{args.source}/prices?pairCodes={pair_codes}'
         date_now_utc:datetime = datetime.utcnow()
