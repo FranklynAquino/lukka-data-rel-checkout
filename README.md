@@ -37,5 +37,5 @@ A script dedicated for Pricing API, that checkouts several endpoints.
 
 | Argument | Flag     | Description                |
 | :-------- | :------- | :------------------------- |
-| `--version` | `-v` | Specify version (e.g. v1, v2)| 
+| `--version` | `-v` | Specify version (e.g. v1, v3)| 
 | `--source`| `-s` | Specify source (e.g. 2000,10500)|
