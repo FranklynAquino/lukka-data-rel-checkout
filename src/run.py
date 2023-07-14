@@ -10,9 +10,14 @@ from datetime import (datetime,
                     time, 
                     timedelta)
 
-logger = get_logger("-")
+logger = get_logger("Main")
 
 parser = argparse.ArgumentParser()
+parser.add_argument('-r',
+                    '--region',
+                    nargs='?',
+                    type = str,
+                    help='Please Specify A Region (e.g., e (east), w (west))',)
 parser.add_argument('-v',
                     '--version',
                     nargs='?',
@@ -25,7 +30,7 @@ parser.add_argument('-s',
                     help='Please Specify A Source (e.g., 2000,10500)',)
 parser.add_argument('-pc',
                     '--pair_codes',
-                    nargs='?',
+                    nargs='+',
                     type = str,
                     help='Please Specify Pair Code, or List of Codes (e.g., ETH-USD or [ETH-USD,XBT-USD,XLT-USD])',)
 parser.add_argument('-t',
@@ -39,6 +44,7 @@ parser.add_argument('run_all',
                     help='Runs All Sources for Each Version Using Pair Code Set',)
 
 args = parser.parse_args()
+
 if args.token is None:
     raise ArgumentError("Please add Bearer Token for authorized run")
 else:
@@ -47,6 +53,7 @@ else:
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {token}'
             }
+<<<<<<< HEAD
     portal = "https://data-pricing-api.lukka.tech"
     pair_codes = "XBT-USD,ETH-USD,XLT-USD,BCH-USD,BNB-USD,XEC1-USD"
     
@@ -62,6 +69,32 @@ else:
         for item in response.json():
             current_latest_obj = LatestPricesObj(pair_code=item['pairCode'],ts=item['ts'],current_ts=date_now_utc, prices=item['price'])
             logger.info(f'Your Objects {current_latest_obj.__str__()}')
+=======
+    
+    portal = "https://data-pricing-api.lukka.tech"
+    if(args.region == 'e'):
+        portal = "https://data-pricing-east.lukka.tech"
+    if(args.region == 'w'):
+        portal = "https://data-pricing-west.lukka.tech"
+        
+    pair_codes = "XBT-USD,ETH-USD,XLT-USD,BCH-USD,BNB-USD,XEC1-USD"
+    if(args.pair_codes is not None):
+        pair_codes = ','.join(args.pair_codes)
+        
+    if args.version is not None and args.source is not None:
+        list_of_latest_prices:List[LatestPricesObj] = []
+        args_url = f'{portal}/{args.version}/pricing/sources/{args.source}/prices?pairCodes={pair_codes}'
+        date_now_utc:datetime = datetime.utcnow()
+        logger.info(f'Your current time is: {date_now_utc}')
+        response = get(url=args_url, headers=headers)
+        
+        for item in response.json():
+            current_latest_obj = LatestPricesObj(pair_code=item['pairCode'],
+                                                ts=item['ts'],
+                                                current_ts=date_now_utc,
+                                                prices=item['price'],)
+            logger.info(f'{current_latest_obj.__str__()}')
+>>>>>>> QA
             list_of_latest_prices.append(current_latest_obj)
         
         five_min_lag = timedelta(minutes=5)
@@ -107,10 +140,9 @@ else:
             logger.info(f'Your current time is: {date_now_utc}')
             response = get(url=full_url, headers=headers)
             
-            
             for item in response.json():
                 current_latest_obj = LatestPricesObj(pair_code=item['pairCode'],ts=item['ts'],current_ts=date_now_utc, prices=item['price'])
-                logger.info(f'Your Objects {current_latest_obj.__str__()}')
+                logger.info(f'{current_latest_obj.__str__()}')
                 if url == pricingv1_url:
                     list_of_latest_pricesv1.append(current_latest_obj)
                 elif url == pricingv1_10500_url:
