@@ -53,23 +53,6 @@ else:
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {token}'
             }
-<<<<<<< HEAD
-    portal = "https://data-pricing-api.lukka.tech"
-    pair_codes = "XBT-USD,ETH-USD,XLT-USD,BCH-USD,BNB-USD,XEC1-USD"
-    
-
-    
-    if args.version is not None and args.source is not None:
-        list_of_latest_prices:List[LatestPricesObj] = []
-        args_url = f'{portal}/{args.version}/pricing/sources/{args.source}/prices?pairCodes={pair_codes}'
-        date_now_utc:datetime = datetime.utcnow()
-        logger.info(f'Your current time is: {date_now_utc}')
-        response = get(url=args_url, headers=headers)
-        
-        for item in response.json():
-            current_latest_obj = LatestPricesObj(pair_code=item['pairCode'],ts=item['ts'],current_ts=date_now_utc, prices=item['price'])
-            logger.info(f'Your Objects {current_latest_obj.__str__()}')
-=======
     
     portal = "https://data-pricing-api.lukka.tech"
     if(args.region == 'e'):
@@ -94,7 +77,6 @@ else:
                                                 current_ts=date_now_utc,
                                                 prices=item['price'],)
             logger.info(f'{current_latest_obj.__str__()}')
->>>>>>> QA
             list_of_latest_prices.append(current_latest_obj)
         
         five_min_lag = timedelta(minutes=5)
