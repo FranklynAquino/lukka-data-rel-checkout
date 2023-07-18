@@ -156,9 +156,10 @@ else:
                 elif url == pricingv3_url:
                     list_of_latest_pricesv3.append(current_latest_obj)
                     
-        
-        v1_prices_success_counter = 0
         v1_prices_failure_counter = 0
+        v1s10500_prices_failure_counter = 0
+        v3_prices_failure_counter = 0
+        list_of_affected_latencies:List[LatestPricesObj] = []
         for latest_price in list_of_latest_pricesv1:
             latest_ts = datetime.strptime(latest_price.ts, '%Y-%m-%dT%H:%M:%SZ')
             lag = latest_price.curren_ts - latest_ts
@@ -166,6 +167,8 @@ else:
             if lag >= three_min_lag and lag < five_min_lag:
                 logger.info(f'V1(2000): {latest_price.pair_code} is within 3-4 minutes of current time, difference: {lag}')
             else:
+                v1_prices_failure_counter += 1
+                list_of_affected_latencies.append(latest_price)
                 logger.info(f'V1(2000): {latest_price.pair_code} is NOT within 3-4 minutes of current time, difference: {lag}')
         
         for latest_price in list_of_latest_pricesv1_10500:
@@ -175,6 +178,8 @@ else:
             if lag <= one_min_lag and match:
                 logger.info(f'V1(10500): {latest_price.pair_code} is within current time: difference: {lag} & prices include sub-pennies ({latest_price.prices})')
             else:
+                v1s10500_prices_failure_counter += 1
+                list_of_affected_latencies.append(latest_price)
                 logger.info(f'V1(10500): {latest_price.pair_code} is NOT within current time, difference: {lag} or prices doesn\'t include sub-pennies ({latest_price.prices})')
                 
                 
@@ -184,8 +189,14 @@ else:
             if lag >= three_min_lag and lag < five_min_lag:
                 logger.info(f'V3(2000): {latest_price.pair_code} is within 3-4 minutes of current time, difference: {lag}')
             else:
+                v3_prices_failure_counter += 1
+                list_of_affected_latencies.append(latest_price)
                 logger.info(f'V3(2000): {latest_price.pair_code} is NOT within 3-4 minutes of current time, difference: {lag}')
-                
+            
+        if (v1_prices_failure_counter == 0) and (v1s10500_prices_failure_counter == 0) and (v3_prices_failure_counter == 0):
+            logger.info(f'ALL Tests Passed')
+        else:
+            logger.info(f'Pairs that failed: {list_of_affected_latencies.__str__()}')
     else:
         logger.info('Checking other arguments')
 
