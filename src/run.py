@@ -8,7 +8,7 @@ from custom_exceptions.custom_exception import ArgumentError
 from my_utils.myUtils import get_logger
 from obj_box.latest_prices_obj import LatestPricesObj
 from datetime import (datetime, 
-                    timedelta)
+                    timedelta,)
 
 logger = get_logger("Main")
 
@@ -97,7 +97,7 @@ else:
             
         #logger.info(f'Your current time is: ', date_now_utc.strftime('%Y/%m/%d %H:%M:%S'))
         logger.info(f'TESTING Your current time is: ', date_now_utc.strftime('%Y/%m/%d %H:%M'))
-        response = get(url=args_url, headers=headers)
+        # response = get(url=args_url, headers=headers)
         
         for item in response.json():
             current_latest_obj = LatestPricesObj(pair_code=item['pairCode'],
@@ -142,7 +142,8 @@ else:
         
         list_of_urls = [pricingv1_url,pricingv1_10500_url,pricingv3_url]
         
-        date_now_utc:datetime
+        date_now_utc:datetime 
+        formated_date = date_now_utc.strftime('%Y/%m/%d %H:%M:%S')
         
         for url in list_of_urls:
             full_url = f'{portal}{url}?pairCodes={pair_codes}'
@@ -165,7 +166,7 @@ else:
             #logger.info(f'Your current time is: {date_now_utc}')
             #logger.info(f'TESTING Your current time is: ', date_now_utc.strftime('%Y/%m/%d %H:%M:%S'))
             print("TESTING Your current time is: " + date_now_utc.strftime('%Y/%m/%d %H:%M:%S'))
-            response = get(url=full_url, headers=headers)
+            # response = get(url=full_url, headers=headers)
             
             for item in response.json():
                 current_latest_obj = LatestPricesObj(pair_code=item['pairCode'],ts=item['ts'],current_ts=date_now_utc, prices=item['price'])
@@ -177,6 +178,9 @@ else:
                 elif url == pricingv3_url:
                     list_of_latest_pricesv3.append(current_latest_obj)
                     
+        
+        v1_prices_success_counter = 0
+        v1_prices_failure_counter = 0
         for latest_price in list_of_latest_pricesv1:
             latest_ts = datetime.strptime(latest_price.ts, '%Y-%m-%dT%H:%M:%SZ')
             lag = latest_price.curren_ts - latest_ts
@@ -204,6 +208,7 @@ else:
             else:
                 logger.info(f'V3(2000): {latest_price.pair_code} is NOT within 3-4 minutes of current time, difference: {lag}')
                 
+        logger.info()
     else:
         logger.info('Checking other arguments')
 
