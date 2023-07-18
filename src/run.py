@@ -81,7 +81,6 @@ else:
         args_url = f'{portal}/{args.version}/pricing/sources/{args.source}/prices?pairCodes={pair_codes}'
         date_now_utc:datetime = datetime.utcnow()
         logger.info(f'Your current Region is: {"West/DR" if args.region=="w" else "East/PROD"}')
-        # logger.info(f'Your current time is: {date_now_utc}')
         logger.info("Your current time is: " + date_now_utc.strftime('%Y/%m/%d %H:%M:%S'))
         try:
             ###
@@ -92,11 +91,9 @@ else:
             latency_end = datetime.utcnow() - latency_start
             latency_end = latency_end.total_seconds()
             
-            #TODO: This if statemenet below doesn't work! 
-            if len(response.text) <= 0 :
+            if not response.text.__contains__("pair"):
                 list_of_missing_latest_pairs.append(pair_codes)
             
-            logger.info(f'your response -> {response.text}')
             for item in response.json():
                 current_latest_obj = LatestPricesObj(pair_code=item['pairCode'],
                                                     ts=item['ts'],
@@ -141,13 +138,14 @@ else:
                     list_of_specified_latencies.append(latest_price)
                     logger.info(f'{args.version}({args.source}): {latest_price.pair_code} is NOT within 3-4 minutes of current time, difference: {lag}')
         
-        if (prices_failure_counter == 0):
+        if (prices_failure_counter == 0 and list_of_missing_latest_pairs is None):
             logger.info(f'\nALL Tests Passed')
+        elif list_of_missing_latest_pairs is not None:
+                logger.info(f'\nPairs that are missing: {list_of_missing_latest_pairs}')
         else:
             logger.info(f'\nPairs that failed:')
             for latest_price in list_of_specified_latencies:
                 logger.info(f'{latest_price.__str__()}')
-            
             if list_of_missing_latest_pairs is not None:
                 logger.info(f'\nPairs that are missing: {list_of_missing_latest_pairs}')
                 
@@ -161,13 +159,13 @@ else:
         list_of_latest_pricesv1_10500:List[LatestPricesObj] = []
         
         list_of_urls = [pricingv1_url,pricingv1_10500_url,pricingv3_url]
+        list_of_all_missing_latest_pairs = []
         
         date_now_utc:datetime
         
         for url in list_of_urls:
             full_url = f'{portal}{url}?pairCodes={pair_codes}'
             date_now_utc:datetime = datetime.utcnow()
-            # logger.info(f'Your current time is: {date_now_utc}')
             logger.info("Your current time is: " + date_now_utc.strftime('%Y/%m/%d %H:%M:%S'))
             try:
                 ###
@@ -204,10 +202,19 @@ else:
         v1s10500_prices_failure_counter = 0
         v3_prices_failure_counter = 0
         list_of_affected_latencies:List[LatestPricesObj] = []
+        
         for latest_price in list_of_latest_pricesv1:
             latest_ts = datetime.strptime(latest_price.ts, '%Y-%m-%dT%H:%M:%SZ')
             lag = latest_price.curren_ts - latest_ts
-            # if lag >= '00:03:00.00'  and lag < '00:05:00.00':
+            
+            # if pair_codes.__contains__('BTC-USD'):
+            #     list_of_all_missing_latest_pairs.append(latest_price.pair_code)
+            
+            exists = not any(x in latest_price.pair_code for x in pair_codes)
+            if exists:
+                logger.info(f'Pair code: {latest_price.pair_code} exists in pair_codes')
+                
+                
             if lag >= three_min_lag and lag < five_min_lag:
                 logger.info(f'V1(2000): {latest_price.pair_code} is within 3-4 minutes of current time, difference: {lag}')
             else:
@@ -216,11 +223,14 @@ else:
                 latest_price.source = '2000'
                 list_of_affected_latencies.append(latest_price)
                 logger.info(f'V1(2000): {latest_price.pair_code} is NOT within 3-4 minutes of current time, difference: {lag}')
+            # if any(x in list_of_pair_codes for x in latest_price.pair_code):
+            #     list_of_all_missing_latest_pairs.append(latest_price.pair_code)
         
         for latest_price in list_of_latest_pricesv1_10500:
             latest_ts = datetime.strptime(latest_price.ts, '%Y-%m-%dT%H:%M:%SZ')
             lag = latest_price.curren_ts - latest_ts
             match = re.compile(r'[0-9]\.[0-9]{3}').search(latest_price.prices)
+                
             if lag <= one_min_lag and match:
                 logger.info(f'V1(10500): {latest_price.pair_code} is within current time: difference: {lag} & prices include sub-pennies ({latest_price.prices})')
             else:
@@ -229,7 +239,8 @@ else:
                 latest_price.source = '10500'
                 list_of_affected_latencies.append(latest_price)
                 logger.info(f'V1(10500): {latest_price.pair_code} is NOT within current time, difference: {lag} or prices doesn\'t include sub-pennies ({latest_price.prices})')
-                
+            # if [x for x in list_of_pair_codes if x != latest_price.pair_code]:
+            #     list_of_all_missing_latest_pairs.append(latest_price.pair_code)
                 
         for latest_price in list_of_latest_pricesv3:
             latest_ts = datetime.strptime(latest_price.ts, '%Y-%m-%dT%H:%M:%SZ')
@@ -242,11 +253,15 @@ else:
                 latest_price.source = '2000'
                 list_of_affected_latencies.append(latest_price)
                 logger.info(f'V3(2000): {latest_price.pair_code} is NOT within 3-4 minutes of current time, difference: {lag}')
-            
-        if (v1_prices_failure_counter == 0) and (v1s10500_prices_failure_counter == 0) and (v3_prices_failure_counter == 0):
+            # if any(x in list_of_pair_codes for x in latest_price.pair_code):
+            #     list_of_all_missing_latest_pairs.append(latest_price.pair_code)
+        
+        
+        if (v1_prices_failure_counter == 0) and (v1s10500_prices_failure_counter == 0) and (v3_prices_failure_counter == 0 and list_of_all_missing_latest_pairs is None):
             logger.info(f'\nALL Tests Passed')
         else:
-            logger.info(f'\nPairs that failed:')
+            # logger.info(f'\nPairs that are missing: {"None" if len(list_of_all_missing_latest_pairs)==0 else list_of_all_missing_latest_pairs}')
+            logger.info(f'\nPairs that failed: {"None" if len(list_of_affected_latencies)<=0 else ""}')
             for latest_price in list_of_affected_latencies:
                 logger.info(f'{latest_price.__str__()}')
     else:
