@@ -1,13 +1,13 @@
 
 import argparse
 import regex as re
-from requests import (get,)
+from requests import (get,exceptions)
+from json import (decoder)
 from typing import List
 from custom_exceptions.custom_exception import ArgumentError
 from my_utils.myUtils import get_logger
 from obj_box.latest_prices_obj import LatestPricesObj
-from datetime import (datetime,
-                    time, 
+from datetime import (datetime, 
                     timedelta)
 
 logger = get_logger("Main")
@@ -69,16 +69,22 @@ else:
         args_url = f'{portal}/{args.version}/pricing/sources/{args.source}/prices?pairCodes={pair_codes}'
         date_now_utc:datetime = datetime.utcnow()
         logger.info(f'Your current time is: {date_now_utc}')
-        response = get(url=args_url, headers=headers)
-        
-        for item in response.json():
-            current_latest_obj = LatestPricesObj(pair_code=item['pairCode'],
-                                                ts=item['ts'],
-                                                current_ts=date_now_utc,
-                                                prices=item['price'],)
-            logger.info(f'{current_latest_obj.__str__()}')
-            list_of_latest_prices.append(current_latest_obj)
-        
+        try:
+            response = get(url=args_url, headers=headers).json()
+            logger.info(f'your reponse -> {response}')
+            for item in response:
+                current_latest_obj = LatestPricesObj(pair_code=item['pairCode'],
+                                                    ts=item['ts'],
+                                                    current_ts=date_now_utc,
+                                                    prices=item['price'],)
+                logger.info(f'{current_latest_obj.__str__()}')
+                list_of_latest_prices.append(current_latest_obj)
+        except exceptions.JSONDecodeError as e:
+            logger.info(f'Please use valid bearer token: {e}')
+        except decoder.JSONDecodeError as e:
+            logger.info(f'Please use valid bearer token: {e}')
+
+            
         five_min_lag = timedelta(minutes=5)
         three_min_lag = timedelta(minutes=3)
         one_min_lag = timedelta(minutes=1)
@@ -120,10 +126,20 @@ else:
             full_url = f'{portal}{url}?pairCodes={pair_codes}'
             date_now_utc:datetime = datetime.utcnow()
             logger.info(f'Your current time is: {date_now_utc}')
-            response = get(url=full_url, headers=headers)
-            
-            for item in response.json():
-                current_latest_obj = LatestPricesObj(pair_code=item['pairCode'],ts=item['ts'],current_ts=date_now_utc, prices=item['price'])
+            try:
+                response = get(url=full_url, headers=headers).json()
+            except exceptions.JSONDecodeError as e:
+                logger.info(f'Please use valid bearer token: {e}')
+                break
+            except decoder.JSONDecodeError as e:
+                logger.info(f'Please use valid bearer token: {e}')
+                break
+
+            for item in response:
+                current_latest_obj = LatestPricesObj(pair_code=item['pairCode'],
+                                                    ts=item['ts'],
+                                                    current_ts=date_now_utc,
+                                                    prices=item['price'],)
                 logger.info(f'{current_latest_obj.__str__()}')
                 if url == pricingv1_url:
                     list_of_latest_pricesv1.append(current_latest_obj)
@@ -131,6 +147,7 @@ else:
                     list_of_latest_pricesv1_10500.append(current_latest_obj)
                 elif url == pricingv3_url:
                     list_of_latest_pricesv3.append(current_latest_obj)
+
                 
         lag_check_4_minutes = date_now_utc - timedelta(minutes=4)
         five_min_lag = timedelta(minutes=5)
