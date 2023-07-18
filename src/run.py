@@ -43,6 +43,21 @@ parser.add_argument('run_all',
                     type = str,
                     help='Runs All Sources for Each Version Using Pair Code Set',)
 
+
+def confirm_portal(portal='https://data-pricing-api.lukka.tech',region=None):
+    if(args.region == 'e'):
+        portal = "https://data-pricing-east.lukka.tech"
+    if(args.region == 'w'):
+        portal = "https://data-pricing-west.lukka.tech"
+    return portal
+
+def confirm_pair_codes(pair_codes=None):
+    if(args.pair_codes is None):
+        pair_codes = "XBT-USD,ETH-USD,XLT-USD,BCH-USD,BNB-USD,XEC1-USD"
+    else:
+        pair_codes = ','.join(args.pair_codes)
+    return pair_codes
+
 args = parser.parse_args()
 
 if args.token is None:
@@ -53,25 +68,21 @@ else:
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {token}'
             }
+    portal = confirm_portal(region=args.region)
+    pair_codes = confirm_pair_codes(pair_codes=args.pair_codes)
     
-    portal = "https://data-pricing-api.lukka.tech"
-    if(args.region == 'e'):
-        portal = "https://data-pricing-east.lukka.tech"
-    if(args.region == 'w'):
-        portal = "https://data-pricing-west.lukka.tech"
-        
-    pair_codes = "XBT-USD,ETH-USD,XLT-USD,BCH-USD,BNB-USD,XEC1-USD"
-    if(args.pair_codes is not None):
-        pair_codes = ','.join(args.pair_codes)
-        
+    five_min_lag = timedelta(minutes=5)
+    three_min_lag = timedelta(minutes=3)
+    one_min_lag = timedelta(minutes=1)
+    
     if args.version is not None and args.source is not None:
         list_of_latest_prices:List[LatestPricesObj] = []
         args_url = f'{portal}/{args.version}/pricing/sources/{args.source}/prices?pairCodes={pair_codes}'
         date_now_utc:datetime = datetime.utcnow()
+        logger.info(f'Your current Region is: {"West/DR" if args.region=="w" else "East/PROD"}')
         logger.info(f'Your current time is: {date_now_utc}')
         try:
             response = get(url=args_url, headers=headers).json()
-            logger.info(f'your reponse -> {response}')
             for item in response:
                 current_latest_obj = LatestPricesObj(pair_code=item['pairCode'],
                                                     ts=item['ts'],
@@ -80,16 +91,10 @@ else:
                 logger.info(f'{current_latest_obj.__str__()}')
                 list_of_latest_prices.append(current_latest_obj)
         except exceptions.JSONDecodeError as e:
-            logger.info(f'Please use valid bearer token: {e}')
+            logger.info(f'Please use valid bearer token')
         except decoder.JSONDecodeError as e:
-            logger.info(f'Please use valid bearer token: {e}')
-
+            logger.info(f'Please use valid bearer token')
             
-        five_min_lag = timedelta(minutes=5)
-        three_min_lag = timedelta(minutes=3)
-        one_min_lag = timedelta(minutes=1)
-        # lag_check_1_minutes = date_now_utc - timedelta(minutes=1)
-        
         if(args.source == '10500'):
             for latest_price in list_of_latest_prices:
                 latest_ts = datetime.strptime(latest_price.ts, '%Y-%m-%dT%H:%M:%SZ')
@@ -129,10 +134,10 @@ else:
             try:
                 response = get(url=full_url, headers=headers).json()
             except exceptions.JSONDecodeError as e:
-                logger.info(f'Please use valid bearer token: {e}')
+                logger.info(f'Please use valid bearer token')
                 break
             except decoder.JSONDecodeError as e:
-                logger.info(f'Please use valid bearer token: {e}')
+                logger.info(f'Please use valid bearer token')
                 break
 
             for item in response:
@@ -147,19 +152,12 @@ else:
                     list_of_latest_pricesv1_10500.append(current_latest_obj)
                 elif url == pricingv3_url:
                     list_of_latest_pricesv3.append(current_latest_obj)
-
-                
-        lag_check_4_minutes = date_now_utc - timedelta(minutes=4)
-        five_min_lag = timedelta(minutes=5)
-        three_min_lag = timedelta(minutes=3)
-        one_min_lag = timedelta(minutes=1)
-        # lag_check_1_minutes = date_now_utc - timedelta(minutes=1)
-        
+                    
         for latest_price in list_of_latest_pricesv1:
             latest_ts = datetime.strptime(latest_price.ts, '%Y-%m-%dT%H:%M:%SZ')
             lag = latest_price.curren_ts - latest_ts
             # if lag >= '00:03:00.00'  and lag < '00:05:00.00':
-            if lag >= timedelta(minutes=3) and lag < timedelta(minutes=5):
+            if lag >= three_min_lag and lag < five_min_lag:
                 logger.info(f'V1(2000): {latest_price.pair_code} is within 3-4 minutes of current time, difference: {lag}')
             else:
                 logger.info(f'V1(2000): {latest_price.pair_code} is NOT within 3-4 minutes of current time, difference: {lag}')
