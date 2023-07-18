@@ -121,22 +121,23 @@ else:
                 lag = latest_price.curren_ts - latest_ts
                 match = re.compile(r'[0-9]\.[0-9]{3}').search(latest_price.prices)
                 if lag >= one_min_lag and match:
-                    logger.info(f'V1(10500): {latest_price.pair_code} is within current time: difference: {lag} & prices include sub-pennies ({latest_price.prices})')
+                    logger.info(f'{args.version}({args.source}):  {latest_price.pair_code} is within current time: difference: {lag} & prices include sub-pennies ({latest_price.prices})')
                 else:
                     prices_failure_counter += 1
-                    latest_price.version_source = f'{args.version}({args.source}'
+                    latest_price.version = f'{args.version}'
+                    latest_price.source = f'{args.source}'
                     list_of_specified_latencies.append(latest_price)
-                    logger.info(f'V1(10500): {latest_price.pair_code} is NOT within current time, difference: {lag} or prices doesn\'t include sub-pennies ({latest_price.prices})')
+                    logger.info(f'{args.version}({args.source}): {latest_price.pair_code} is NOT within current time, difference: {lag} or prices doesn\'t include sub-pennies ({latest_price.prices})')
         else:
             for latest_price in list_of_latest_prices:
                 latest_ts = datetime.strptime(latest_price.ts, '%Y-%m-%dT%H:%M:%SZ')
                 lag = latest_price.curren_ts - latest_ts
-                # if lag >= '00:03:00.00'  and lag < '00:05:00.00':
                 if lag >= three_min_lag and lag < five_min_lag:
                     logger.info(f'{args.version}({args.source}): {latest_price.pair_code} is within 3-4 minutes of current time, difference: {lag}')
                 else:
                     prices_failure_counter += 1
-                    latest_price.version_source = f'{args.version}({args.source})'
+                    latest_price.version = f'{args.version}'
+                    latest_price.source = f'{args.source}'
                     list_of_specified_latencies.append(latest_price)
                     logger.info(f'{args.version}({args.source}): {latest_price.pair_code} is NOT within 3-4 minutes of current time, difference: {lag}')
         
