@@ -257,7 +257,8 @@ else:
             #     list_of_all_missing_latest_pairs.append(latest_price.pair_code)
         
         
-        if (v1_prices_failure_counter == 0) and (v1s10500_prices_failure_counter == 0) and (v3_prices_failure_counter == 0 and list_of_all_missing_latest_pairs is None):
+        # if (v1_prices_failure_counter == 0) and (v1s10500_prices_failure_counter == 0) and (v3_prices_failure_counter == 0 and list_of_all_missing_latest_pairs is None):
+        if (v1_prices_failure_counter == 0) and (v1s10500_prices_failure_counter == 0) and (v3_prices_failure_counter == 0):
             logger.info(f'\nALL Tests Passed')
         else:
             # logger.info(f'\nPairs that are missing: {"None" if len(list_of_all_missing_latest_pairs)==0 else list_of_all_missing_latest_pairs}')
