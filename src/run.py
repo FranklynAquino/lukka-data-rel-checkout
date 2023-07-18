@@ -95,6 +95,23 @@ else:
         except decoder.JSONDecodeError as e:
             logger.info(f'Please use valid bearer token')
             
+        #logger.info(f'Your current time is: ', date_now_utc.strftime('%Y/%m/%d %H:%M:%S'))
+        logger.info(f'TESTING Your current time is: ', date_now_utc.strftime('%Y/%m/%d %H:%M'))
+        response = get(url=args_url, headers=headers)
+        
+        for item in response.json():
+            current_latest_obj = LatestPricesObj(pair_code=item['pairCode'],
+                                                ts=item['ts'],
+                                                current_ts=date_now_utc,
+                                                prices=item['price'],)
+            logger.info(f'{current_latest_obj.__str__()}')
+            list_of_latest_prices.append(current_latest_obj)
+        
+        five_min_lag = timedelta(minutes=5)
+        three_min_lag = timedelta(minutes=3)
+        one_min_lag = timedelta(minutes=1)
+        # lag_check_1_minutes = date_now_utc - timedelta(minutes=1)
+        
         if(args.source == '10500'):
             for latest_price in list_of_latest_prices:
                 latest_ts = datetime.strptime(latest_price.ts, '%Y-%m-%dT%H:%M:%SZ')
@@ -145,6 +162,13 @@ else:
                                                     ts=item['ts'],
                                                     current_ts=date_now_utc,
                                                     prices=item['price'],)
+            #logger.info(f'Your current time is: {date_now_utc}')
+            #logger.info(f'TESTING Your current time is: ', date_now_utc.strftime('%Y/%m/%d %H:%M:%S'))
+            print("TESTING Your current time is: " + date_now_utc.strftime('%Y/%m/%d %H:%M:%S'))
+            response = get(url=full_url, headers=headers)
+            
+            for item in response.json():
+                current_latest_obj = LatestPricesObj(pair_code=item['pairCode'],ts=item['ts'],current_ts=date_now_utc, prices=item['price'])
                 logger.info(f'{current_latest_obj.__str__()}')
                 if url == pricingv1_url:
                     list_of_latest_pricesv1.append(current_latest_obj)
