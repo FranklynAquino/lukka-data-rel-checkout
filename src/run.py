@@ -80,7 +80,8 @@ else:
         args_url = f'{portal}/{args.version}/pricing/sources/{args.source}/prices?pairCodes={pair_codes}'
         date_now_utc:datetime = datetime.utcnow()
         logger.info(f'Your current Region is: {"West/DR" if args.region=="w" else "East/PROD"}')
-        logger.info(f'Your current time is: {date_now_utc}')
+        # logger.info(f'Your current time is: {date_now_utc}')
+        logger.info(f'TESTING Your current time is: ', date_now_utc.strftime('%Y/%m/%d %H:%M'))
         try:
             response = get(url=args_url, headers=headers).json()
             for item in response:
@@ -94,23 +95,10 @@ else:
             logger.info(f'Please use valid bearer token')
         except decoder.JSONDecodeError as e:
             logger.info(f'Please use valid bearer token')
-            
-        #logger.info(f'Your current time is: ', date_now_utc.strftime('%Y/%m/%d %H:%M:%S'))
-        logger.info(f'TESTING Your current time is: ', date_now_utc.strftime('%Y/%m/%d %H:%M'))
-        # response = get(url=args_url, headers=headers)
-        
-        for item in response.json():
-            current_latest_obj = LatestPricesObj(pair_code=item['pairCode'],
-                                                ts=item['ts'],
-                                                current_ts=date_now_utc,
-                                                prices=item['price'],)
-            logger.info(f'{current_latest_obj.__str__()}')
-            list_of_latest_prices.append(current_latest_obj)
         
         five_min_lag = timedelta(minutes=5)
         three_min_lag = timedelta(minutes=3)
         one_min_lag = timedelta(minutes=1)
-        # lag_check_1_minutes = date_now_utc - timedelta(minutes=1)
         
         if(args.source == '10500'):
             for latest_price in list_of_latest_prices:
@@ -142,13 +130,13 @@ else:
         
         list_of_urls = [pricingv1_url,pricingv1_10500_url,pricingv3_url]
         
-        date_now_utc:datetime 
-        formated_date = date_now_utc.strftime('%Y/%m/%d %H:%M:%S')
+        date_now_utc:datetime
         
         for url in list_of_urls:
             full_url = f'{portal}{url}?pairCodes={pair_codes}'
             date_now_utc:datetime = datetime.utcnow()
-            logger.info(f'Your current time is: {date_now_utc}')
+            # logger.info(f'Your current time is: {date_now_utc}')
+            print("TESTING Your current time is: " + date_now_utc.strftime('%Y/%m/%d %H:%M:%S'))
             try:
                 response = get(url=full_url, headers=headers).json()
             except exceptions.JSONDecodeError as e:
@@ -157,18 +145,8 @@ else:
             except decoder.JSONDecodeError as e:
                 logger.info(f'Please use valid bearer token')
                 break
-
-            for item in response:
-                current_latest_obj = LatestPricesObj(pair_code=item['pairCode'],
-                                                    ts=item['ts'],
-                                                    current_ts=date_now_utc,
-                                                    prices=item['price'],)
-            #logger.info(f'Your current time is: {date_now_utc}')
-            #logger.info(f'TESTING Your current time is: ', date_now_utc.strftime('%Y/%m/%d %H:%M:%S'))
-            print("TESTING Your current time is: " + date_now_utc.strftime('%Y/%m/%d %H:%M:%S'))
-            # response = get(url=full_url, headers=headers)
             
-            for item in response.json():
+            for item in response:
                 current_latest_obj = LatestPricesObj(pair_code=item['pairCode'],ts=item['ts'],current_ts=date_now_utc, prices=item['price'])
                 logger.info(f'{current_latest_obj.__str__()}')
                 if url == pricingv1_url:
@@ -208,7 +186,6 @@ else:
             else:
                 logger.info(f'V3(2000): {latest_price.pair_code} is NOT within 3-4 minutes of current time, difference: {lag}')
                 
-        logger.info()
     else:
         logger.info('Checking other arguments')
 
