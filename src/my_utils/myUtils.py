@@ -4,7 +4,6 @@ class Env:
     def __init__(self):
         pass
         
-        
 def get_logger(name):
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
@@ -18,5 +17,3 @@ def get_logger(name):
     # add handler
     logger.addHandler(consoleHandler)
     return logger
-
-env = Env()

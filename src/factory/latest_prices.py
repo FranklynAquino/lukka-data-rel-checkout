@@ -53,7 +53,6 @@ class LatestPrices:
             latency_end = datetime.utcnow() - latency_start
             latency_end = latency_end.total_seconds()
             
-            
             for pc in self.list_of_pair_codes:
                 if not response.text.__contains__(pc):
                     self.list_of_missing_latest_pairs.append(pc)
