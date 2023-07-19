@@ -43,13 +43,6 @@ parser.add_argument('run_all',
                     type=str,
                     help='Runs All Sources for Each Version Using Pair Code Set',)
 
-# def confirm_pair_codes(pair_codes=None):
-#     if (args.pair_codes is None):
-#         pair_codes = "XBT-USD,ETH-USD,XLT-USD,BCH-USD,BNB-USD,XEC1-USD,BTC-USD"
-#     else:
-#         pair_codes = ','.join(args.pair_codes)
-#     return pair_codes
-
 args = parser.parse_args()
 
 if args.token is None:
@@ -84,16 +77,16 @@ else:
                 lag = latest_price.current_ts - latest_ts
                 match = re.compile(
                     r'[0-9]\.[0-9]{3}').search(latest_price.prices)
-                if lag >= one_min_lag and match:
+                if lag <= one_min_lag and match:
                     logger.info(
-                        f'{args.version}({args.source}):  {latest_price.pair_code} is within current time: difference: {lag} & prices include sub-pennies ({latest_price.prices})')
+                        f'{args.version}({args.source}): {latest_price.pair_code} is within current time: difference: {lag} & prices include sub-pennies ({latest_price.prices})')
                 else:
                     prices_failure_counter += 1
                     latest_price.version = f'{args.version}'
                     latest_price.source = f'{args.source}'
                     list_of_specified_latencies.append(latest_price)
                     logger.info(
-                        f'{args.version}({args.source}): {latest_price.pair_code} is NOT within current time, difference: {lag} or prices doesn\'t include sub-pennies ({latest_price.prices})')
+                        f'{args.version}({args.source}):{latest_price.pair_code} is NOT within current time, difference: {lag} or prices doesn\'t include sub-pennies ({latest_price.prices})')
         else:
             for latest_price in list_of_latest_prices:
                 latest_ts = datetime.strptime(
