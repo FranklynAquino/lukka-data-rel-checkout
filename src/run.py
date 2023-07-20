@@ -1,14 +1,10 @@
 
 import argparse
-import regex as re
-from requests import (get, exceptions)
-from json import (decoder)
-from typing import List
 from custom_exceptions.custom_exception import ArgumentError
 from my_utils.myUtils import get_logger
 from factory.latest_prices import LatestPrices
-from datetime import (datetime,
-                    timedelta,)
+
+from lag_check import LagChecker
 
 logger = get_logger("Main")
 
@@ -53,64 +49,31 @@ else:
         'Content-Type': 'application/json',
         'Authorization': f'Bearer {token}'
     }
-    # pair_codes = confirm_pair_codes(pair_codes=args.pair_codes)
-
-    five_min_lag = timedelta(minutes=5)
-    three_min_lag = timedelta(minutes=3)
-    one_min_lag = timedelta(minutes=1)
 
     if args.version is not None and args.source is not None:
-        latest_prices = LatestPrices(headers=headers, 
-                                                    region=args.region,
-                                                    version=args.version,
-                                                    source=args.source,
-                                                    pair_codes=args.pair_codes)
+        latest_prices = LatestPrices(headers=headers,
+                                     region=args.region,
+                                     version=args.version,
+                                     source=args.source,
+                                     pair_codes=args.pair_codes)
+        
         list_of_latest_prices = latest_prices.parse_latest_prices()
         list_of_missing_latest_pairs = latest_prices.get_list_of_missing_latest_pairs()
-        
-        prices_failure_counter = 0
-        list_of_specified_latencies = []
-        if (args.source == '10500'):
-            for latest_price in list_of_latest_prices:
-                latest_ts = datetime.strptime(
-                    latest_price.ts, '%Y-%m-%dT%H:%M:%SZ')
-                lag = latest_price.current_ts - latest_ts
-                match = re.compile(
-                    r'[0-9]\.[0-9]{3}').search(latest_price.prices)
-                if lag <= one_min_lag and match:
-                    logger.info(
-                        f'{args.version}({args.source}): {latest_price.pair_code} is within current time: difference: {lag} & prices include sub-pennies ({latest_price.prices})')
-                else:
-                    prices_failure_counter += 1
-                    latest_price.version = f'{args.version}'
-                    latest_price.source = f'{args.source}'
-                    list_of_specified_latencies.append(latest_price)
-                    logger.info(
-                        f'{args.version}({args.source}):{latest_price.pair_code} is NOT within current time, difference: {lag} or prices doesn\'t include sub-pennies ({latest_price.prices})')
-        else:
-            for latest_price in list_of_latest_prices:
-                latest_ts = datetime.strptime(
-                    latest_price.ts, '%Y-%m-%dT%H:%M:%SZ')
-                lag = latest_price.current_ts - latest_ts
-                if lag >= three_min_lag and lag < five_min_lag:
-                    logger.info(
-                        f'{args.version}({args.source}): {latest_price.pair_code} is within 3-4 minutes of current time, difference: {lag}')
-                else:
-                    prices_failure_counter += 1
-                    latest_price.version = f'{args.version}'
-                    latest_price.source = f'{args.source}'
-                    list_of_specified_latencies.append(latest_price)
-                    logger.info(
-                        f'{args.version}({args.source}): {latest_price.pair_code} is NOT within 3-4 minutes of current time, difference: {lag}')
 
-        if (prices_failure_counter == 0 and list_of_missing_latest_pairs is None):
-            logger.info(f'\nALL Tests Passed')
+        lag_chcker = LagChecker(list_of_latest_prices=list_of_latest_prices,
+                                source=args.source,
+                                version=args.version,)
+        
+        list_of_lagged_ts = lag_chcker.calculate_latencies()
+
+        if (lag_chcker.lag_failure_counter == 0 and len(list_of_missing_latest_pairs) == 0):
+            logger.info(f'ALL Tests Passed')
         elif list_of_missing_latest_pairs is not None:
             logger.info(
                 f'Pairs that are missing: {list_of_missing_latest_pairs}')
         else:
             logger.info(f'Pairs that failed:')
-            for latest_price in list_of_specified_latencies:
+            for latest_price in list_of_lagged_ts:
                 logger.info(f'{latest_price.__str__()}')
             if list_of_missing_latest_pairs is not None:
                 logger.info(

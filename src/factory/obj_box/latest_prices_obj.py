@@ -7,3 +7,5 @@ class LatestPricesObj:
     ts:str
     current_ts:str
     latency:str
+    version:str
+    source:str
