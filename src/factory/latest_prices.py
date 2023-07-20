@@ -1,12 +1,10 @@
-from requests import (get, exceptions)
-from json import (decoder)
+from requests import (get,)
 from dataclasses import (dataclass, field, InitVar,)
 from typing import List
 from .obj_box.latest_prices_obj import LatestPricesObj
 from datetime import datetime
 from time import perf_counter
 from my_utils.myUtils import get_logger
-
 
 @dataclass
 class LatestPrices:
@@ -40,39 +38,36 @@ class LatestPrices:
     def parse_latest_prices(self) -> List[LatestPricesObj]:
         args_url = f'{self.portal}/{self.version}/pricing/sources/{self.source}/prices?pairCodes={self.pair_codes}'
         date_now_utc: datetime = datetime.utcnow()
-        print(
-            #TODO: Add region to output for PROD
-            f'Your current Region is: {"West" if self.region=="w" else "East"}')
+        if self.region is None:
+            print('Currently running PROD')
+        else:
+            print(
+                f'Your current Region is: {"West" if self.region=="w" else "East"}')
         print("Your current time is: " +
                         date_now_utc.strftime('%Y/%m/%d %H:%M:%S'))
-        try:
+        # try:
             ###
             # Latency for command with args is calculated here
             ###
-            start = perf_counter()
-            response = get(url=args_url, headers=self.headers)
-            request_time = perf_counter() - start
+        start = perf_counter()
+        response = get(url=args_url, headers=self.headers)
+        request_time = perf_counter() - start
 
-            for pc in self.list_of_pair_codes:
-                if not response.text.__contains__(pc):
-                    self.list_of_missing_latest_pairs.append(pc)
+        for pc in self.list_of_pair_codes:
+            if not response.text.__contains__(pc):
+                self.list_of_missing_latest_pairs.append(pc)
 
-            for item in response.json():
-                current_latest_obj = LatestPricesObj(pair_code=item['pairCode'],
-                                                     ts=item['ts'],
-                                                     current_ts=date_now_utc,
-                                                     prices=item['price'],
-                                                     latency=request_time,
-                                                     version=self.version,
-                                                     source=self.source)
-                print(f'{current_latest_obj.__repr__()}')
-                self.list_of_latest_prices.append(current_latest_obj)
-            return self.list_of_latest_prices
-        
-        except exceptions.JSONDecodeError as e:
-            self.logger.error(f'Please use valid bearer token')
-        except decoder.JSONDecodeError as e:
-            self.logger.error(f'Please use valid bearer token')
+        for item in response.json():
+            current_latest_obj = LatestPricesObj(pair_code=item['pairCode'],
+                                                    ts=item['ts'],
+                                                    current_ts=date_now_utc,
+                                                    prices=item['price'],
+                                                    latency=request_time,
+                                                    version=self.version,
+                                                    source=self.source)
+            print(f'{current_latest_obj.__repr__()}')
+            self.list_of_latest_prices.append(current_latest_obj)
+        return self.list_of_latest_prices
 
     def get_list_of_missing_latest_pairs(self) -> List[str]:
         return self.list_of_missing_latest_pairs
