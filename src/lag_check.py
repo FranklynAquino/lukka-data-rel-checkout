@@ -2,7 +2,6 @@ from typing import List
 from datetime import (datetime, timedelta)
 import regex as re
 
-from my_utils.myUtils import get_logger
 from factory.obj_box.latest_prices_obj import LatestPricesObj
 
 class LagChecker:
