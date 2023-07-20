@@ -2,11 +2,10 @@ from typing import List
 from datetime import (datetime, timedelta)
 import regex as re
 
-from my_utils.myUtils import get_logger
 from factory.obj_box.latest_prices_obj import LatestPricesObj
 
 class LagChecker:
-    def __init__(self, list_of_latest_prices: List[LatestPricesObj], source: str = None, version: str = None,logger=None):
+    def __init__(self, list_of_latest_prices: List[LatestPricesObj], source: str = None, version: str = None):
         self.list_of_latest_prices = list_of_latest_prices
         self.source = source
         self.version = version
